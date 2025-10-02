@@ -21,6 +21,12 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_AmazonEKSClusterPolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 
+resource "aws_iam_role_policy_attachment" "eks_cluster_AmazonEKSServicePolicy" {
+  role       = aws_iam_role.eks_cluster_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
+}
+
+
 # ---------------------------
 # IAM Role for Node Group
 # ---------------------------
@@ -64,6 +70,8 @@ resource "aws_eks_cluster" "cluster" {
 
   vpc_config {
     subnet_ids = var.private_subnets
+    endpoint_public_access  = true
+    endpoint_private_access = true
   }
 
   depends_on = [

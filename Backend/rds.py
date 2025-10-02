@@ -7,7 +7,7 @@ CORS(app)  # Allow frontend to call backend
 
 # RDS MySQL config
 db_config = {
-    "host": "database.c3wea6ku2zh6.us-east-2.rds.amazonaws.com",  # add your RDS endpoint
+    "host": "paytm-db.c3wea6ku2zh6.us-east-2.rds.amazonaws.com",  # add your RDS endpoint
     "user": "admin",
     "password": "Devops123",  # add your password
     "database": "paytm"       # add your db name

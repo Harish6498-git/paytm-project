@@ -14,12 +14,12 @@ spec:
     spec:
       containers:
       - name: backend-container
-        image: 218405927623.dkr.ecr.us-east-2.amazonaws.com/backend:v3
+        image: 218405927623.dkr.ecr.us-east-2.amazonaws.com/backend:v1
         ports:
         - containerPort: 5000
         env:
         - name: DB_HOST
-          value: "database-1.c3wea6ku2zh6.us-east-2.rds.amazonaws.com"
+          value: "paytm-db.c3wea6ku2zh6.us-east-2.rds.amazonaws.com"
         - name: DB_USER
           value: "admin"
         - name: DB_PASSWORD
