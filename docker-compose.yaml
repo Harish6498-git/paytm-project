@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: paytm-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - DB_HOST=db
+      - DB_USER=admin
+      - DB_PASSWORD=Devops123
+      - DB_NAME=paytm
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ./Frontend/Frontend-code
+      dockerfile: Dockerfile
+    container_name: paytm-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+  db:
+    image: mysql:8.0
+    container_name: paytm-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: paytm
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: Devops123
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./Backend/paytm.sql:/docker-entrypoint-initdb.d/paytm.sql
+
+volumes:
+  db_data:
+
