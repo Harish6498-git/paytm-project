@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: paytm-frontend-svc
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: paytm-frontend

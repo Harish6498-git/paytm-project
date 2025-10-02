@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paytm-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: paytm-backend
+  template:
+    metadata:
+      labels:
+        app: paytm-backend
+    spec:
+      containers:
+      - name: backend-container
+        image: 218405927623.dkr.ecr.us-east-2.amazonaws.com/backend:v3
+        ports:
+        - containerPort: 5000
+        env:
+        - name: DB_HOST
+          value: "database-1.c3wea6ku2zh6.us-east-2.rds.amazonaws.com"
+        - name: DB_USER
+          value: "admin"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: password
+        - name: DB_NAME
+          value: "paytm"
