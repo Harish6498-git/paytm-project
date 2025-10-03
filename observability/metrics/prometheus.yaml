@@ -20,10 +20,26 @@ data:
           - source_labels: [__meta_kubernetes_pod_label_app]
             action: keep
             regex: node-exporter
-          # Replace pod IP with podIP:9100
+          # Replace pod IP with podIP:9100 (regex ensures capture works)
           - source_labels: [__meta_kubernetes_pod_ip]
+            regex: (.*)
             target_label: __address__
             replacement: ${1}:9100
+
+      # Scrape kubelet metrics for pod/container CPU & memory
+      - job_name: "kubelet"
+        scheme: https
+        kubernetes_sd_configs:
+          - role: node
+        tls_config:
+          insecure_skip_verify: true
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - source_labels: [__address__]
+            regex: (.*):10250
+            replacement: ${1}:10250
+            target_label: __address__
+        metrics_path: /metrics/cadvisor
 
 ---
 apiVersion: apps/v1
@@ -41,6 +57,7 @@ spec:
       labels:
         app: prometheus
     spec:
+      serviceAccountName: prometheus
       containers:
       - name: prometheus
         image: prom/prometheus:v2.47.2
