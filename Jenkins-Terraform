@@ -6,8 +6,7 @@ pipeline {
   }
 
   environment {
-    // DB password stored in Jenkins credentials (Secret Text)
-    DB_PASSWORD = credentials('terraform-db-password') 
+    DB_PASSWORD = credentials('terraform-db-password')
   }
 
   stages {
@@ -85,9 +84,7 @@ pipeline {
 
   post {
     always {
-      dir('infrastructure') {
-        sh 'terraform show || true'
-      }
+      sh 'cd infrastructure && terraform show || true'
     }
     failure {
       echo "❌ Terraform pipeline failed"
