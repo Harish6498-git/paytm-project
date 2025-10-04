@@ -32,7 +32,7 @@ pipeline {
       }
     }
 
-    stage('Terraform Plan')
+    stage('Terraform Plan') {
       steps {
         dir('infrastructure') {
           sh '''
@@ -52,7 +52,7 @@ pipeline {
       when { expression { params.ACTION == 'apply' } }
       steps {
         timeout(time: 5, unit: 'MINUTES') {
-          input message: "Do you really want to apply Terraform changes?"
+          input message: "⚠️ Do you really want to APPLY Terraform changes?"
         }
         dir('infrastructure') {
           sh 'terraform apply -auto-approve tfplan'
@@ -64,7 +64,7 @@ pipeline {
       when { expression { params.ACTION == 'destroy' } }
       steps {
         timeout(time: 5, unit: 'MINUTES') {
-          input message: "Do you really want to DESTROY all resources?"
+          input message: "⚠️ Do you really want to DESTROY all resources?"
         }
         dir('infrastructure') {
           sh '''
