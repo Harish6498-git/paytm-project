@@ -32,8 +32,7 @@ pipeline {
       }
     }
 
-    stage('Terraform Plan') {
-      when { expression { params.ACTION == 'plan' } }
+    stage('Terraform Plan')
       steps {
         dir('infrastructure') {
           sh '''
