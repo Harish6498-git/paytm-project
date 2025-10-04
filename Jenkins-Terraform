@@ -1,81 +1,88 @@
 pipeline {
-    agent any
+  agent any
 
-    parameters {
-        choice(name: 'ACTION', choices: ['plan', 'apply', 'destroy'], description: 'Terraform action to perform')
+  parameters {
+    choice(name: 'ACTION', choices: ['plan', 'apply', 'destroy'], description: 'Terraform Action to perform')
+  }
+
+  environment {
+    // DB password stored in Jenkins credentials (Secret Text)
+    DB_PASSWORD = credentials('terraform-db-password') 
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        git branch: 'main', url: 'https://github.com/Harish6498-git/paytm-project.git'
+      }
     }
 
-    environment {
-        TF_DIR = "infrastructure"
-        AWS_DEFAULT_REGION = "us-east-2"   // change to your AWS region
+    stage('Terraform Init') {
+      steps {
+        dir('infrastructure') {
+          sh 'terraform init -input=false'
+        }
+      }
     }
 
-    stages {
-        stage('Checkout Source') {
-            steps {
-                git branch: 'main',
-                    url: 'https://github.com/Harish6498-git/paytm-project.git'
-            }
+    stage('Terraform Validate') {
+      steps {
+        dir('infrastructure') {
+          sh 'terraform validate'
         }
-
-        stage('Terraform Init') {
-            steps {
-                dir("${TF_DIR}") {
-                    sh 'terraform init'
-                }
-            }
-        }
-
-        stage('Terraform Validate') {
-            steps {
-                dir("${TF_DIR}") {
-                    sh 'terraform validate'
-                }
-            }
-        }
-
-        stage('Terraform Plan') {
-            steps {
-                dir("${TF_DIR}") {
-                    sh 'terraform plan -out=tfplan'
-                }
-            }
-        }
-
-        stage('Approval for Apply') {
-            when {
-                expression { params.ACTION == 'apply' }
-            }
-            steps {
-                script {
-                    timeout(time: 15, unit: 'MINUTES') {
-                        input message: "Do you approve applying this Terraform plan?", ok: "Apply"
-                    }
-                }
-            }
-        }
-
-        stage('Terraform Apply/Destroy') {
-            when {
-                anyOf {
-                    expression { params.ACTION == 'apply' }
-                    expression { params.ACTION == 'destroy' }
-                }
-            }
-            steps {
-                dir("${TF_DIR}") {
-                    script {
-                        if (params.ACTION == 'apply') {
-                            sh 'terraform apply -auto-approve tfplan'
-                        } else if (params.ACTION == 'destroy') {
-                            sh 'terraform destroy -auto-approve'
-                        }
-                    }
-                }
-            }
-        }
+      }
     }
 
+    stage('Terraform Plan') {
+      when { expression { params.ACTION == 'plan' } }
+      steps {
+        dir('infrastructure') {
+          sh '''
+            terraform plan -out=tfplan \
+              -var "allowed_ssh_cidr=0.0.0.0/0" \
+              -var "aws_region=us-east-2" \
+              -var "db_username=admin" \
+              -var "db_password=$DB_PASSWORD" \
+              -var "key_name=project" \
+              -var "project_name="
+          '''
+        }
+      }
+    }
+
+    stage('Terraform Apply') {
+      when { expression { params.ACTION == 'apply' } }
+      steps {
+        timeout(time: 5, unit: 'MINUTES') {
+          input message: "Do you really want to apply Terraform changes?"
+        }
+        dir('infrastructure') {
+          sh 'terraform apply -auto-approve tfplan'
+        }
+      }
+    }
+
+    stage('Terraform Destroy') {
+      when { expression { params.ACTION == 'destroy' } }
+      steps {
+        timeout(time: 5, unit: 'MINUTES') {
+          input message: "Do you really want to DESTROY all resources?"
+        }
+        dir('infrastructure') {
+          sh '''
+            terraform destroy -auto-approve \
+              -var "allowed_ssh_cidr=0.0.0.0/0" \
+              -var "aws_region=us-east-2" \
+              -var "db_username=admin" \
+              -var "db_password=$DB_PASSWORD" \
+              -var "key_name=project" \
+              -var "project_name=paytm"
+          '''
+        }
+      }
+    }
+  }
+}
     post {
         always {
             dir("${TF_DIR}") {
