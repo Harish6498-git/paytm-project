@@ -1,0 +1,93 @@
+pipeline {
+    agent any
+
+    parameters {
+        choice(name: 'ACTION', choices: ['plan', 'apply', 'destroy'], description: 'Terraform action to perform')
+    }
+
+    environment {
+        TF_DIR = "infrastructure"
+        AWS_DEFAULT_REGION = "us-east-2"   // change to your AWS region
+    }
+
+    stages {
+        stage('Checkout Source') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/Harish6498-git/paytm-project.git'
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                dir("${TF_DIR}") {
+                    sh 'terraform init'
+                }
+            }
+        }
+
+        stage('Terraform Validate') {
+            steps {
+                dir("${TF_DIR}") {
+                    sh 'terraform validate'
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                dir("${TF_DIR}") {
+                    sh 'terraform plan -out=tfplan'
+                }
+            }
+        }
+
+        stage('Approval for Apply') {
+            when {
+                expression { params.ACTION == 'apply' }
+            }
+            steps {
+                script {
+                    timeout(time: 15, unit: 'MINUTES') {
+                        input message: "Do you approve applying this Terraform plan?", ok: "Apply"
+                    }
+                }
+            }
+        }
+
+        stage('Terraform Apply/Destroy') {
+            when {
+                anyOf {
+                    expression { params.ACTION == 'apply' }
+                    expression { params.ACTION == 'destroy' }
+                }
+            }
+            steps {
+                dir("${TF_DIR}") {
+                    script {
+                        if (params.ACTION == 'apply') {
+                            sh 'terraform apply -auto-approve tfplan'
+                        } else if (params.ACTION == 'destroy') {
+                            sh 'terraform destroy -auto-approve'
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            dir("${TF_DIR}") {
+                sh 'terraform show || true'
+            }
+        }
+        failure {
+            echo "❌ Terraform pipeline failed"
+        }
+        success {
+            echo "✅ Terraform ${params.ACTION} completed successfully"
+        }
+    }
+}
+
