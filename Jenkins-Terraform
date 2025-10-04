@@ -44,7 +44,7 @@ pipeline {
               -var "db_username=admin" \
               -var "db_password=$DB_PASSWORD" \
               -var "key_name=project" \
-              -var "project_name="
+              -var "project_name=paytm"
           '''
         }
       }
@@ -82,19 +82,18 @@ pipeline {
       }
     }
   }
-}
-    post {
-        always {
-            dir("${TF_DIR}") {
-                sh 'terraform show || true'
-            }
-        }
-        failure {
-            echo "❌ Terraform pipeline failed"
-        }
-        success {
-            echo "✅ Terraform ${params.ACTION} completed successfully"
-        }
-    }
-}
 
+  post {
+    always {
+      dir('infrastructure') {
+        sh 'terraform show || true'
+      }
+    }
+    failure {
+      echo "❌ Terraform pipeline failed"
+    }
+    success {
+      echo "✅ Terraform ${params.ACTION} completed successfully"
+    }
+  }
+}
