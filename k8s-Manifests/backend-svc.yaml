@@ -3,9 +3,9 @@ kind: Service
 metadata:
   name: paytm-backend-svc
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
-  - port: 80
+  - port: 5000
     targetPort: 5000
   selector:
     app: paytm-backend
